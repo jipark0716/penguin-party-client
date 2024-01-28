@@ -26,6 +26,8 @@ board.boardEvent.on('click', (event: BoardClickEvent) => {
 
 let lastClickHand: CardClickEvent
 hand.cardEvent.on('click', (event: CardClickEvent) => {
+    board.readySubmit(event.card.type)
+    hand.selectCard(event.index)
     lastClickHand = event
 })
 
