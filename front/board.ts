@@ -2,7 +2,7 @@ import * as PIXI from "pixi.js"
 import {TypedEventEmitter} from "./event";
 import {CardRepository} from "./card";
 
-const BoardSize = 8
+const BoardSize: number = 8
 
 type BoardEvents = {
     'click': [BoardClickEvent]
@@ -19,13 +19,26 @@ export class BoardClickEvent {
     }
 }
 
+export class Cell {
+    sprite: PIXI.Sprite
+    cardType: number|null = null
+    submittableCard: number[] | null = null
+    public constructor(texture: PIXI.Texture) {
+        this.sprite = PIXI.Sprite.from(texture)
+        this.sprite.anchor.set(0.5)
+        this.sprite.width = 35
+        this.sprite.height = 57
+    }
+}
+
 export class Board {
     container: PIXI.Container
     app: PIXI.Application
     background: PIXI.Sprite
     boardEvent: TypedEventEmitter<BoardEvents> = new TypedEventEmitter<BoardEvents>()
-    cells: PIXI.Sprite[][]
+    cells: Cell[][]
     cardRepository: CardRepository
+    cardCount = 0
 
     public constructor(app: PIXI.Application, cardRepository: CardRepository) {
         this.app = app
@@ -34,7 +47,7 @@ export class Board {
         this.background = this.createBackground()
         this.container.addChild(this.background)
         this.cells = this.createCells()
-        this.cells.flat().forEach((o: PIXI.Sprite) => this.container.addChild(o))
+        this.cells.flat().forEach((o: Cell) => this.container.addChild(o.sprite))
     }
 
     private createContainer(): PIXI.Container {
@@ -87,45 +100,82 @@ export class Board {
         ]
     }
 
-    private createCells(): PIXI.Sprite[][]
+    private createCells(): Cell[][]
     {
-        return Array.from({length: BoardSize}, (_, y: number): PIXI.Sprite[]  => {
-            return Array.from({length: BoardSize - y}, (_, x: number): PIXI.Sprite => {
-                const result = PIXI.Sprite.from(this.cardRepository.getEmpty());
-                result.x = this.getXy(x, y)[0]
-                result.y = this.getXy(x, y)[1]
-                result.anchor.set(0.5)
-                result.width = 35
-                result.height = 57
-                result.on('click', (event) => {
+        return Array.from({length: BoardSize}, (_, y: number): Cell[]  => {
+            return Array.from({length: BoardSize - y}, (_, x: number): Cell => {
+                const cell = new Cell(this.cardRepository.getEmpty())
+                cell.sprite.x = this.getXy(x, y)[0]
+                cell.sprite.y = this.getXy(x, y)[1]
+                cell.sprite.on('click', (event) => {
                     this.boardEvent.emit('click', new BoardClickEvent(event, x, y))
                 })
-                return result;
+                return cell;
             })
         })
     }
 
     public readySubmit(type: number): void
     {
+        this.clearSubmittable()
         this.cells.forEach((row, y) => {
             row.forEach((o, x) => {
-                if (y == 0) {
-                    o.eventMode = 'static'
-                    o.texture = this.cardRepository.getSubmitAble()
-                } else {
-                    o.tint = 0xaaaaaa
+                if (
+                    (this.cardCount == 0 && y == 0) ||
+                    (o.cardType == null && o.submittableCard != null && (o.submittableCard.length == 0 || o.submittableCard.includes(type)))
+                ) {
+                    o.sprite.eventMode = 'static'
+                    o.sprite.texture = this.cardRepository.getSubmitAble()
                 }
             })
         })
     }
 
-    public submitCard(x: number, y: number, type: number)
+    private clearSubmittable()
     {
         this.cells.flat().forEach((o) => {
-            o.eventMode = 'none'
+            o.sprite.eventMode = 'none'
+            if (o.cardType == null) {
+                o.sprite.texture = this.cardRepository.getEmpty()
+            }
         })
-        const sprite = this.cells[y][x]
-        sprite.texture = this.cardRepository.getCard(type)
+    }
+
+    public submitCard(x: number, y: number, type: number)
+    {
+        const cell = this.cells[y][x]
+        cell.cardType = type
+        this.clearSubmittable()
+        this.cardCount++
+        this.asyncSubmittable(x - 1, y)
+        this.asyncSubmittable(x + 1, y)
+        cell.sprite.texture = this.cardRepository.getCard(type)
+    }
+
+    public asyncSubmittable(x: number, y: number) {
+        if (y > BoardSize || x > BoardSize - y || x < 0) return
+
+        const cell = this.cells[y][x]
+        if (!cell) return
+
+        if (cell.cardType != null) {
+            this.asyncSubmittable(x, y + 1)
+            this.asyncSubmittable(x - 1, y + 1)
+            return
+        }
+
+        if (y == 0) {
+            cell.submittableCard = []
+        } else {
+            const lowLeftCard = this.cells[y - 1][x]?.cardType
+            const lowRightCard = this.cells[y - 1][x + 1]?.cardType
+            if (lowLeftCard !== null && lowRightCard !== null) {
+                // 아래 카드 둘이 같으면 하나만
+                cell.submittableCard = lowLeftCard == lowRightCard ?
+                    [lowLeftCard] :
+                    [lowLeftCard, lowRightCard]
+            }
+        }
     }
 
     get view() {

@@ -30,9 +30,3 @@ hand.cardEvent.on('click', (event: CardClickEvent) => {
     hand.selectCard(event.index)
     lastClickHand = event
 })
-
-hand.addCard(0)
-hand.addCard(1)
-hand.addCard(2)
-hand.addCard(3)
-hand.addCard(4)
