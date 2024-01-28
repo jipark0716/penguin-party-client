@@ -88,6 +88,14 @@ export class Hand {
     {
         const card = this.cards.splice(index, 1)[0]
         this.container.removeChild(card.sprite)
+        this.cards.forEach((o) => o.sprite.tint = 0xffffff)
+    }
+
+    public selectCard(index: number): void
+    {
+        this.cards.forEach((o, i) => {
+            o.sprite.tint = i == index ? 0xffffff : 0xaaaaaa
+        })
     }
 
     get view() {

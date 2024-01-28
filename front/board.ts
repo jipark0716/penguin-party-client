@@ -3,7 +3,6 @@ import {TypedEventEmitter} from "./event";
 import {CardRepository} from "./card";
 
 const BoardSize = 8
-const cardSize :[number, number] = [35, 57]
 
 type BoardEvents = {
     'click': [BoardClickEvent]
@@ -22,7 +21,6 @@ export class BoardClickEvent {
 
 export class Board {
     container: PIXI.Container
-    cardTexture: PIXI.Texture
     app: PIXI.Application
     background: PIXI.Sprite
     boardEvent: TypedEventEmitter<BoardEvents> = new TypedEventEmitter<BoardEvents>()
@@ -32,7 +30,6 @@ export class Board {
     public constructor(app: PIXI.Application, cardRepository: CardRepository) {
         this.app = app
         this.cardRepository = cardRepository
-        this.cardTexture = this.getCardGraphics()
         this.container = this.createContainer()
         this.background = this.createBackground()
         this.container.addChild(this.background)
@@ -83,14 +80,6 @@ export class Board {
         return result;
     }
 
-    private getCardGraphics(): PIXI.Texture
-    {
-        const graphics = new PIXI.Graphics()
-        graphics.beginFill(0xffffff)
-        graphics.drawRoundedRect(0, 0, cardSize[0], cardSize[1], 5)
-        return this.app.renderer.generateTexture(graphics.endFill())
-    }
-
     private getXy(x: number, y: number): [number, number] {
         return [
             x * 50 + (y * 25),
@@ -102,13 +91,12 @@ export class Board {
     {
         return Array.from({length: BoardSize}, (_, y: number): PIXI.Sprite[]  => {
             return Array.from({length: BoardSize - y}, (_, x: number): PIXI.Sprite => {
-                const result = PIXI.Sprite.from(this.cardTexture);
+                const result = PIXI.Sprite.from(this.cardRepository.getEmpty());
                 result.x = this.getXy(x, y)[0]
                 result.y = this.getXy(x, y)[1]
                 result.anchor.set(0.5)
-                result.width = cardSize[0]
-                result.height = cardSize[1]
-                result.eventMode = 'static'
+                result.width = 35
+                result.height = 57
                 result.on('click', (event) => {
                     this.boardEvent.emit('click', new BoardClickEvent(event, x, y))
                 })
@@ -117,8 +105,25 @@ export class Board {
         })
     }
 
+    public readySubmit(type: number): void
+    {
+        this.cells.forEach((row, y) => {
+            row.forEach((o, x) => {
+                if (y == 0) {
+                    o.eventMode = 'static'
+                    o.texture = this.cardRepository.getSubmitAble()
+                } else {
+                    o.tint = 0xaaaaaa
+                }
+            })
+        })
+    }
+
     public submitCard(x: number, y: number, type: number)
     {
+        this.cells.flat().forEach((o) => {
+            o.eventMode = 'none'
+        })
         const sprite = this.cells[y][x]
         sprite.texture = this.cardRepository.getCard(type)
     }
