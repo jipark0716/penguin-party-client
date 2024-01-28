@@ -1,5 +1,7 @@
 import * as PIXI from 'pixi.js';
-import { Board } from './board';
+import {Board, BoardClickEvent} from './board';
+import {CardClickEvent, Hand} from './hand'
+import {CardRepository} from "./card";
 
 const app = new PIXI.Application({
     background: '#1099bb',
@@ -9,5 +11,26 @@ const app = new PIXI.Application({
 // @ts-ignore
 document.body.appendChild(app.view)
 
-const board = new Board(app)
+const cardRepository = new CardRepository(app)
+
+const board = new Board(app, cardRepository)
 app.stage.addChild(board.view)
+
+const hand: Hand = new Hand(app, cardRepository)
+app.stage.addChild(hand.view)
+
+board.boardEvent.on('click', (event: BoardClickEvent) => {
+    hand.removeCard(lastClickHand.index)
+    board.submitCard(event.x, event.y, lastClickHand.card.type)
+})
+
+let lastClickHand: CardClickEvent
+hand.cardEvent.on('click', (event: CardClickEvent) => {
+    lastClickHand = event
+})
+
+hand.addCard(0)
+hand.addCard(1)
+hand.addCard(2)
+hand.addCard(3)
+hand.addCard(4)
