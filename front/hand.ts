@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import {CardRepository} from "./card";
-import {TypedEventEmitter} from "./event";
+import {TypedEventEmitter} from "../event";
 import events from "events";
 
 type CardEvents = {
@@ -50,7 +50,9 @@ export class Hand {
     }
 
     public addCard(type: number): void {
-        const card = new PIXI.Sprite(this.cardRepository.getCard(type))
+        const texture = this.cardRepository.getCard(type)
+        if (texture == null) return;
+        const card = new PIXI.Sprite(texture)
         card.anchor.set(0.5)
         card.width = 53
         card.height = 80

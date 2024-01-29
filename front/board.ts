@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js"
-import {TypedEventEmitter} from "./event";
+import {TypedEventEmitter} from "../event";
 import {CardRepository} from "./card";
 
 const BoardSize: number = 8
