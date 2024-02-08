@@ -131,6 +131,16 @@ export class Board {
         })
     }
 
+    public clear()
+    {
+        this.cells.flat().forEach((o) => {
+            o.cardType = null
+            o.submittableCard = null
+        })
+        this.cardCount = 0
+        this.clearSubmittable()
+    }
+
     private clearSubmittable()
     {
         this.cells.flat().forEach((o) => {

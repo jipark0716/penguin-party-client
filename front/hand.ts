@@ -100,6 +100,13 @@ export class Hand {
         })
     }
 
+    public clear(): void
+    {
+        while (this.cards.length > 0) {
+            this.removeCard(0)
+        }
+    }
+
     get view() {
         return this.container
     }
