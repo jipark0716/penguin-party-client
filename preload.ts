@@ -11,3 +11,14 @@ electron.contextBridge.exposeInMainWorld('tcp', {
                 callback(buffer)
             })}
 })
+
+electron.contextBridge.exposeInMainWorld('auth', {
+    start: () => electron.ipcRenderer.invoke('auth:start'),
+    id: () => electron.ipcRenderer.invoke('auth:id'),
+    done: (callback: any) => {
+        electron.ipcRenderer.on(
+            'auth:done',
+            (_, token) => {
+                callback(token)
+            })}
+})

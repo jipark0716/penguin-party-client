@@ -6,16 +6,18 @@ enum EventTypes {
     hello = 100,
     authorize = 101,
     joinRoom = 1001,
-    gameStart = 3000,
+    roundStart = 3000,
     submitCard = 3001,
+    roundEnd = 3002,
 }
 
 interface PenguinPartyEvents {
     hello: [Hello],
     authorize: [OnAuthorize],
     joinRoom: [],
-    gameStart: [OnGameStart],
-    submitCard: [OnSubmitCard]
+    roundStart: [OnRoundStart],
+    submitCard: [OnSubmitCard],
+    roundEnd: [OnRoundEnd],
 }
 
 enum RequestTypes {
@@ -35,6 +37,7 @@ interface PenguinPartyRequest {
 export class PenguinParty {
     tcp: Tcp
     private emitter = new events.EventEmitter()
+    userId: number
 
     public on<T extends keyof PenguinPartyEvents & string>(
         eventName: T,
@@ -49,11 +52,12 @@ export class PenguinParty {
             const type = EventTypes[packet.type]
             if (type) {
                 this.emitter.emit(type, packet.payload)
+                console.log(`debug receive ${type} (${JSON.stringify(packet.payload)})`)
             } else {
                 console.log(`핸들러 없음 ${packet.type} (${JSON.stringify(packet.payload)})`)
             }
-            // console.log(`debug receive ${packet.type} (${JSON.stringify(packet.payload)})`)
         })
+        this.on('authorize', (event) => this.userId = event.UserId)
         this.tcp.connect()
     }
 
@@ -61,7 +65,7 @@ export class PenguinParty {
         actionName: T,
         ...argument: PenguinPartyRequest[T]
     ) {
-        // console.log(`debug send ${RequestTypes[actionName]} (${JSON.stringify(argument[0])})`)
+        console.log(`debug send ${RequestTypes[actionName]} (${JSON.stringify(argument[0])})`)
         this.tcp.send(this.encapsulation(
             RequestTypes[actionName],
             argument[0],
@@ -108,8 +112,17 @@ interface Hello {
 interface OnAuthorize {
     UserId: number
 }
-interface OnGameStart {
+interface OnRoundStart {
     Cards: Card[]
+}
+interface OnSubmitCard {
+    X: number,
+    Y: number,
+    Card: Card,
+    UserId: number
+}
+interface OnRoundEnd {
+    Players: Player[]
 }
 
 // req
@@ -131,4 +144,10 @@ interface OnSubmitCard {
     X: number
     Y: number
     Card: Card
+}
+
+interface Player {
+    UserId: number
+    Score: number
+    Cards: Card[]
 }
