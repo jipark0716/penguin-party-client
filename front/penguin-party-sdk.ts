@@ -36,8 +36,8 @@ interface PenguinPartyRequest {
 
 export class PenguinParty {
     tcp: Tcp
+    userId: number = 0
     private emitter = new events.EventEmitter()
-    userId: number
 
     public on<T extends keyof PenguinPartyEvents & string>(
         eventName: T,

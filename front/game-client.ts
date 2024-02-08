@@ -46,10 +46,8 @@ window.auth.start()
 // @ts-ignore
 window.auth.done((token: string) => client.send('authorize', token))
 
-client.on('authorize', (event) => {
-    client.send('createRoom', {
-        Name: '123'
-    })
+client.send('createRoom', {
+    Name: '123'
 })
 
 client.on('joinRoom', () => {
