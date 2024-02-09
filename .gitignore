@@ -1,3 +1,4 @@
 node_modules/
 out/
-front/penguin-party-sdk.ts
+dist/
+front/dist
