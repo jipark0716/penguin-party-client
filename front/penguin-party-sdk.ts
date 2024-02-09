@@ -23,6 +23,7 @@ interface PenguinPartyEvents {
 enum RequestTypes {
     authorize = 100,
     createRoom = 1000,
+    joinRoom = 1001,
     gameStart = 3000,
     submitCard = 3001,
 }
@@ -30,6 +31,7 @@ enum RequestTypes {
 interface PenguinPartyRequest {
     authorize: [string],
     createRoom: [CreateRoomRequest],
+    joinRoom: [JoinRoomRequest],
     gameStart: [],
     submitCard: [SubmitCardRequest],
 }
@@ -128,6 +130,9 @@ interface OnRoundEnd {
 // req
 interface CreateRoomRequest {
     Name: string
+}
+interface JoinRoomRequest {
+    Id: number
 }
 interface SubmitCardRequest {
     X: number

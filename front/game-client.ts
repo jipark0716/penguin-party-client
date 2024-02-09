@@ -3,6 +3,7 @@ import {Board, BoardClickEvent} from './board';
 import {CardClickEvent, Hand} from './hand'
 import {CardRepository} from "./card";
 import {PenguinParty} from "./penguin-party-sdk";
+import {Lobby} from "./lobby";
 
 const app = new PIXI.Application({
     background: '#1099bb',
@@ -40,15 +41,7 @@ hand.cardEvent.on('click', (event: CardClickEvent) => {
     lastClickHand = event
 })
 
-
-// @ts-ignore
-window.auth.start()
-// @ts-ignore
-window.auth.done((token: string) => client.send('authorize', token))
-
-client.send('createRoom', {
-    Name: '123'
-})
+new Lobby(client).init();
 
 client.on('joinRoom', () => {
     client.send('gameStart')
