@@ -7,10 +7,9 @@ module.exports = {
     entry: './front/game-client.ts',
     output: {
         filename: 'app.js',
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve(__dirname, 'front/dist'),
     },
     resolve: {
-        // <-- 추가한 부분
         extensions: ['.ts', '.js'],
     },
     module: {

@@ -4,8 +4,9 @@
   "description": "",
   "main": "out/main.js",
   "scripts": {
-    "compile": "tsc && webpack && copyfiles -f index.html build",
+    "compile": "tsc && tailwind && webpack && copyfiles -f index.html build",
     "start": "npm run compile && cross-env DEBUG=true electron .",
+    "tailwind": "npx tailwindcss -i ./front/input.css -o ./front/output.css",
     "webpack": "webpack"
   },
   "author": "",
@@ -16,12 +17,14 @@
     "cross-env": "^7.0.3",
     "electron": "^28.1.4",
     "electron-builder": "^24.9.1",
+    "tailwindcss": "^3.4.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
     "webpack": "^5.90.0",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@types/bootstrap": "^5.2.10",
     "electron-store": "^8.1.0",
     "pixi.js": "^7.3.3"
   }
