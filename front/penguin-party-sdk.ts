@@ -14,7 +14,7 @@ enum EventTypes {
 interface PenguinPartyEvents {
     hello: [Hello],
     authorize: [OnAuthorize],
-    joinRoom: [],
+    joinRoom: [OnJoinRoom],
     roundStart: [OnRoundStart],
     submitCard: [OnSubmitCard],
     roundEnd: [OnRoundEnd],
@@ -127,6 +127,10 @@ interface OnRoundEnd {
     Players: Player[]
 }
 
+interface OnJoinRoom {
+    Room: Room
+}
+
 // req
 interface CreateRoomRequest {
     Name: string
@@ -155,4 +159,10 @@ interface Player {
     UserId: number
     Score: number
     Cards: Card[]
+}
+
+interface Room {
+    Id: number
+    Name: string
+    Users: number[]
 }

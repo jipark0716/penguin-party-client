@@ -1,20 +1,34 @@
 import {PenguinParty} from "./penguin-party-sdk";
 import * as PIXI from "pixi.js";
+import * as User from './restful/user'
 
 export class Interface {
     app: PIXI.Application
     container: PIXI.Container
+    avatars: Avatar[]
     public constructor(app: PIXI.Application) {
         this.app = app
         this.container = this.createContainer()
-        this.container.addChild(...this.createAvatars())
+        this.avatars = [...this.createAvatars()]
+        this.container.addChild(...this.avatars.flatMap(o => o.container))
     }
 
     public init(sdk: PenguinParty) {
         this.app.stage.addChild(this.container)
+        sdk.on('joinRoom', async (event) => {
+            console.log(event)
+            const userCollectResponse = await User.get(event.Room.Users)
+            userCollectResponse.collect.forEach((user, i) => {
+                const avatar = this.avatars[i]
+                if (user.avatar) {
+                    avatar.avatarImage = user.avatar
+                }
+                avatar.name = user.name
+            })
+        })
     }
 
-    private *createAvatars(): Generator<PIXI.Container> {
+    private *createAvatars(): Generator<Avatar> {
         const textAreaTexture = this.createTextAreaTexture();
         const mask = this.createMaskTexture()
 
@@ -23,14 +37,14 @@ export class Interface {
             const left = new Avatar(true, mask, textAreaTexture)
             left.init()
             left.container.y = i * 120
-            yield left.container
+            yield left
 
             // 오른쪽
             const right = new Avatar(false, mask, textAreaTexture)
             right.init()
             right.container.y = i * 120
             right.container.x = 500
-            yield right.container
+            yield right
         }
     }
 
@@ -83,16 +97,16 @@ export class Avatar {
         this.name = '비어있음'
     }
 
-    set score(score: number) {
+    public set score(score: number) {
         this.scoreArea.text = String(score)
         this.scoreArea.x = this.alignLeft ? 25 : 95 - this.scoreArea.width
     }
 
-    set avatarImage(url: string) {
+    public set avatarImage(url: string) {
         this.avatar.texture = PIXI.Texture.from(url)
     }
 
-    set name(name: string) {
+    public set name(name: string) {
         this.nameArea.text = String(name)
         this.nameArea.x = this.alignLeft ? 25 : 95 - this.nameArea.width
     }
