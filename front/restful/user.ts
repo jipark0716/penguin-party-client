@@ -1,8 +1,6 @@
 export async function get(ids: number[]): Promise<UserCollectionResponse> {
     const url = new URL('http://20.214.207.225:5000/api/users')
-    ids.forEach(id => {
-        url.searchParams.set('ids[]', String(id))
-    })
+    ids.forEach(id => url.searchParams.set('ids[]', String(id)))
     const response = await fetch(url)
     return await response.json() as Promise<UserCollectionResponse>;
 }
