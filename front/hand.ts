@@ -2,6 +2,8 @@ import * as PIXI from "pixi.js";
 import {CardRepository} from "./card";
 import {TypedEventEmitter} from "../event";
 import events from "events";
+import {PenguinParty} from "./penguin-party-sdk";
+import {Board, BoardClickEvent} from "./board";
 
 type CardEvents = {
     'click': [CardClickEvent]
@@ -47,6 +49,37 @@ export class Hand {
                 card.sprite.x = (this.container.width / 2) - (this.cards.length * 15) + (i * 30)
             })
         })
+    }
+
+    public init(sdk: PenguinParty, board: Board): void {
+        this.app.stage.addChild(this.container)
+        sdk.on('roundStart', (event) => {
+            event.Cards.forEach((o) => this.addCard(o.Type))
+        })
+
+        let lastClickHand: CardClickEvent
+        board.boardEvent.on('click', (event: BoardClickEvent) => {
+            sdk.send('submitCard', {
+                X: event.x,
+                Y: event.y,
+                CardIndex: lastClickHand.index
+            })
+        })
+
+        this.cardEvent.on('click', (event: CardClickEvent) => {
+            board.readySubmit(event.card.type)
+            this.selectCard(event.index)
+            lastClickHand = event
+        })
+
+        sdk.on('submitCard', (event) => {
+            if (sdk.userId == event.UserId) {
+                this.removeCard(lastClickHand.index)
+            }
+            board.submitCard(event.X, event.Y, lastClickHand.card.type)
+        })
+
+        sdk.on('roundEnd', () => this.clear())
     }
 
     public addCard(type: number): void {
@@ -105,9 +138,5 @@ export class Hand {
         while (this.cards.length > 0) {
             this.removeCard(0)
         }
-    }
-
-    get view() {
-        return this.container
     }
 }
