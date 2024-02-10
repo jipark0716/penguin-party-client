@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js"
 import {TypedEventEmitter} from "../event";
 import {CardRepository} from "./card";
+import {PenguinParty} from "./penguin-party-sdk";
 
 const BoardSize: number = 8
 
@@ -50,6 +51,11 @@ export class Board {
         this.cells.flat().forEach((o: Cell) => this.container.addChild(o.sprite))
     }
 
+    public init(sdk: PenguinParty): void {
+        this.app.stage.addChild(this.container)
+        sdk.on('roundEnd', () => this.clear())
+    }
+
     private createContainer(): PIXI.Container {
         const result = new PIXI.Container()
         result.x = (this.app.screen.width / 2) - 190
@@ -68,8 +74,9 @@ export class Board {
         let lastX = 0;
         let lastY = 0;
         const drag = (e: PIXI.FederatedPointerEvent) => {
-            this.container.x -= lastX - e.x
-            this.container.y -= lastY - e.y
+            // 드래그로 맵 이동
+            // this.container.x -= lastX - e.x
+            // this.container.y -= lastY - e.y
             lastX = e.x
             lastY = e.y
         }
@@ -87,8 +94,9 @@ export class Board {
             .on('pointerup', remove)
             .on('pointerupoutside', remove)
             .on('wheel', (e) => {
-                this.container.scale.x -= e.deltaY * 0.01
-                this.container.scale.y -= e.deltaY * 0.01
+                // 보드 확대
+                // this.container.scale.x -= e.deltaY * 0.01
+                // this.container.scale.y -= e.deltaY * 0.01
             })
         return result;
     }
@@ -186,9 +194,5 @@ export class Board {
                     [lowLeftCard, lowRightCard]
             }
         }
-    }
-
-    get view() {
-        return this.container
     }
 }

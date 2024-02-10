@@ -72,4 +72,6 @@ export function init(sender: WebContents) {
         const payload = JSON.parse(payloadString)
         return payload.id;
     })
+
+    electron.ipcMain.handle('auth:getToken', getAccessToken)
 }
