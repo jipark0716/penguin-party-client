@@ -22,11 +22,6 @@ const client = new PenguinParty({
 const cardRepository = new CardRepository(app)
 const board = new Board(app, cardRepository)
 board.init(client)
-const hand: Hand = new Hand(app, cardRepository)
-hand.init(client, board)
-new Lobby(client).init()
+new Hand(app, cardRepository).init(client, board)
+new Lobby(app).init(client)
 new Interface(app).init(client)
-
-client.on('joinRoom', () => {
-    client.send('gameStart')
-})

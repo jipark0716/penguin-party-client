@@ -26,11 +26,6 @@ export class CardRepository {
         return this.app.renderer.generateTexture(graphics.endFill())
     }
 
-    public getSubmitAble()
-    {
-        return this.submitAble
-    }
-
     public getEmpty() {
         return this.empty
     }
@@ -43,22 +38,11 @@ export class CardRepository {
         this.app = app
         this.submitAble = this.createSubmitAble()
         this.empty = this.createEmptyTexture()
-        this.cardTextures = [
-            this.creatCardTexture(0x00ffff),
-            this.creatCardTexture(0x00ff00),
-            this.creatCardTexture(0x0000ff),
-            this.creatCardTexture(0xff0000),
-            this.creatCardTexture(0xffff00),
-        ]
+        this.cardTextures = this.creatCardTexture()
     }
 
-    private creatCardTexture(color: ColorSource): PIXI.Texture
+    private creatCardTexture(): PIXI.Texture[]
     {
-        const graphics = new PIXI.Graphics()
-        graphics.beginFill(0x000000)
-        graphics.lineStyle(2, 0x000000, 1)
-        graphics.beginFill(color)
-        graphics.drawRoundedRect(0, 0, 35, 57, 5)
-        return this.app.renderer.generateTexture(graphics.endFill())
+        return Array.from({length: 5}).map((_, i) => PIXI.Texture.from(`assets/card${i + 1}.png`));
     }
 }
