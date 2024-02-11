@@ -30,6 +30,11 @@ export class Lobby {
         document.getElementById('login')?.addEventListener('click', () => window.auth.start())
         document.getElementById('create-action')?.addEventListener('click', () => sdk.send('createRoom', {Name: roomNameElement.value}))
         document.getElementById('join-action')?.addEventListener('click', () => sdk.send('joinRoom', {Id: parseInt(roomIdElement.value)}))
+        document.getElementById('mock-action')?.addEventListener('click', () => {
+            const tokenElement = <HTMLInputElement>document.getElementById('mock-token')
+            // @ts-ignore
+            window.auth.mock(tokenElement.value)
+        })
 
         // @ts-ignore
         window.auth.done((token: string) => {

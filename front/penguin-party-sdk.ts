@@ -6,18 +6,22 @@ enum EventTypes {
     hello = 100,
     authorize = 101,
     joinRoom = 1001,
+    joinRoomOther = 1002,
     roundStart = 3000,
     submitCard = 3001,
     roundEnd = 3002,
+    turnStart = 3003
 }
 
 interface PenguinPartyEvents {
     hello: [Hello],
     authorize: [OnAuthorize],
     joinRoom: [OnJoinRoom],
+    joinRoomOther: [OnJoinRoomOther]
     roundStart: [OnRoundStart],
     submitCard: [OnSubmitCard],
     roundEnd: [OnRoundEnd],
+    turnStart: [OnTurnStart],
 }
 
 enum RequestTypes {
@@ -129,6 +133,14 @@ interface OnRoundEnd {
 
 interface OnJoinRoom {
     Room: Room
+}
+
+interface OnJoinRoomOther {
+    Id: number
+}
+
+interface OnTurnStart {
+    Id: number
 }
 
 // req

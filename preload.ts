@@ -15,6 +15,7 @@ electron.contextBridge.exposeInMainWorld('tcp', {
 electron.contextBridge.exposeInMainWorld('auth', {
     start: () => electron.ipcRenderer.invoke('auth:start'),
     getToken: () => electron.ipcRenderer.invoke('auth:getToken'),
+    mock: (token: string) => electron.ipcRenderer.invoke('auth:mock', token),
     id: () => electron.ipcRenderer.invoke('auth:id'),
     done: (callback: any) => {
         electron.ipcRenderer.on(
