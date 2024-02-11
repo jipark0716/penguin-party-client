@@ -16,7 +16,7 @@ interface UserCollectionResponse {
     collect: User[]
 }
 
-interface User {
+export interface User {
     id: number
     name: string
     avatar: string

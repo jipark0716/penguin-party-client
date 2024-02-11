@@ -1,13 +1,13 @@
 import {PenguinParty} from "./penguin-party-sdk";
 import * as PIXI from "pixi.js";
 import * as User from './restful/user'
-import {Graphics} from "pixi.js";
 
 export class Interface {
     app: PIXI.Application
     container: PIXI.Container
     avatars: Avatar[]
     startButton: PIXI.Sprite
+
     public constructor(app: PIXI.Application) {
         this.app = app
         this.container = this.createContainer()
@@ -21,22 +21,46 @@ export class Interface {
         sdk.on('joinRoom', async (event) => {
             const ownerId = event.Room.Users.find(o => o.IsOwner)?.Id
             const userCollectResponse = await User.get(event.Room.Users.flatMap(o => o.Id))
-            userCollectResponse.collect.forEach((user, i) => {
-                const avatar = this.avatars[i]
-                if (user.avatar) {
-                    avatar.avatarImage = user.avatar
-                }
-                // 방장이면 왕관 달아주기
-                avatar.isOwner = ownerId == user.id
-                avatar.name = user.name
-            })
+            userCollectResponse.collect.forEach(user => this.addUser(user, ownerId == user.id))
+        })
+
+        sdk.on('joinRoomOther', async (event) => {
+            const user = await User.get([event.Id])
+            this.addUser(user.collect[0])
         })
 
         this.startButton.addEventListener('click', () => {
             sdk.send('gameStart')
         })
 
-        sdk.on('roundStart', () => this.startButton.visible = false)
+        sdk.on('roundStart', (event) => {
+            this.startButton.visible = false
+            this.avatars.forEach((o, i) => {
+                if (o.user != null) {
+                    o.card = event.Cards.length
+                }
+            })
+        })
+
+        sdk.on('submitCard', (event) => {
+            const avatar = this.avatars.find(o => o.user?.id === event.UserId)
+            if (!avatar) return
+            avatar.card -= 1
+        })
+    }
+
+    private addUser(user: User.User, isOwner: boolean = false) {
+        if (this.avatars.map(o => o.user?.id).includes(user.id)) return;
+        const avatar = this.avatars.find(o => o.user == null)
+        if (!avatar) return
+        avatar.user = user
+
+        if (user.avatar) {
+            avatar.avatarImage = user.avatar
+        }
+        // 방장이면 왕관 달아주기
+        avatar.isOwner = isOwner
+        avatar.name = user.name
     }
 
     private createStartButton(): PIXI.Sprite {
@@ -124,6 +148,9 @@ export class Avatar {
     scoreArea: PIXI.Text
     avatar: PIXI.Sprite
     crown: PIXI.Sprite
+    cardCountArea: PIXI.Text
+    cardCount: number = 0
+    user: User.User|null = null
     public constructor(alignLeft: boolean, maskTexture: PIXI.Texture, textAreaTexture: PIXI.Texture) {
         const mask = new PIXI.Sprite(maskTexture)
         this.alignLeft = alignLeft
@@ -132,9 +159,11 @@ export class Avatar {
         this.scoreArea = this.createScoreArea()
         this.avatar = this.createAvatar(mask)
         this.crown = this.createCrown()
+        this.cardCountArea = this.createCardCount()
+        const hand = this.createHand()
         const textArea = this.createTextArea(textAreaTexture)
         textArea.addChild(this.nameArea, this.scoreArea)
-        this.container.addChild(textArea, mask, this.avatar, this.crown)
+        this.container.addChild(textArea, mask, this.avatar, this.crown, hand, this.cardCountArea)
     }
 
     public init() {
@@ -159,6 +188,35 @@ export class Avatar {
 
     public set isOwner(isOwner: boolean) {
         this.crown.visible = isOwner
+    }
+
+    public set card(count: number) {
+        this.cardCount = count
+        this.cardCountArea.text = `X${count}`
+    }
+
+    public get card(): number {
+        return this.cardCount
+    }
+
+    private createCardCount(): PIXI.Text {
+        const result = new PIXI.Text('X0', {
+            fontSize: 18,
+            fill: 0xffffff
+        })
+        result.anchor.set(0.5)
+        result.x = this.alignLeft ? 144 : 16
+        result.y = 35
+        return result
+    }
+
+    private createHand(): PIXI.Sprite {
+        const result = PIXI.Sprite.from('assets/cardback.png')
+        result.height = 50
+        result.width = 32
+        result.x = this.alignLeft ? 128 : 0
+        result.y = 10
+        return result
     }
 
     private createCrown(): PIXI.Sprite {

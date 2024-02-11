@@ -10,7 +10,12 @@ interface JWT {
     refresh_token: string
     expire_at: Date
 }
+
+let mockToken: string|null = null
+
 const getAccessToken = async (): Promise<string | null> => {
+    if (mockToken) return mockToken;
+
     let jwt: JWT = <JWT>store.get('jwt')
     if (!jwt) return null;
 
@@ -25,7 +30,6 @@ const getAccessToken = async (): Promise<string | null> => {
         },
     })
     let responseText = response.text();
-    console.log("1234", await responseText)
     if (!response.ok || !responseText) {
         return null;
     }
@@ -36,7 +40,6 @@ const getAccessToken = async (): Promise<string | null> => {
 }
 
 const jwtParse = (code: string): JWT => {
-    console.log("124", code)
     const decodedJwt = JSON.parse(code)
     return {
         access_token: decodedJwt.access_token,
@@ -50,10 +53,9 @@ export function init(sender: WebContents) {
         const endpoint = url.parse(urlString);
         if (!endpoint.query) return
         const searchParams = new URLSearchParams(endpoint.query)
-        let code = searchParams.get("code")
+        const code = searchParams.get("code")
         if (!code) return
         store.set('jwt', jwtParse(Buffer.from(code, 'base64').toString('utf8')))
-        sender.send(`auth`, getAccessToken());
     })
 
     electron.ipcMain.handle('auth:start', async (event) => {
@@ -70,8 +72,13 @@ export function init(sender: WebContents) {
         if (!token) return null;
         const payloadString = token.split('.')[1]
         const payload = JSON.parse(payloadString)
-        return payload.id;
+        return payload.id
     })
 
     electron.ipcMain.handle('auth:getToken', getAccessToken)
+    electron.ipcMain.handle('auth:mock', (event, token) => {
+        mockToken = token
+        console.log(token)
+        event.sender.send('auth:done', token)
+    })
 }
