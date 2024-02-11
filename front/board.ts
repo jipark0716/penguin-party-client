@@ -133,7 +133,7 @@ export class Board {
                     (o.cardType == null && o.submittableCard != null && (o.submittableCard.length == 0 || o.submittableCard.includes(type)))
                 ) {
                     o.sprite.eventMode = 'static'
-                    o.sprite.texture = this.cardRepository.getSubmitAble()
+                    o.sprite.texture = this.cardRepository.submitAble
                 }
             })
         })

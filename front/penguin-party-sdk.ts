@@ -164,5 +164,10 @@ interface Player {
 interface Room {
     Id: number
     Name: string
-    Users: number[]
+    Users: User[]
+}
+
+interface User {
+    Id: number
+    IsOwner: boolean
 }
