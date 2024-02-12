@@ -16,7 +16,7 @@ electron.app.on('ready', async () => {
         },
     });
     window.loadFile('./front/index.html')
-    window.webContents.openDevTools()
+    // window.webContents.openDevTools()
     auth.init(window.webContents)
 
     new ConnectionManager().listen(window)
