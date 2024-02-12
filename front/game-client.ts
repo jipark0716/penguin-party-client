@@ -15,7 +15,7 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view)
 
 const client = new PenguinParty({
-    host: '127.0.0.1',
+    host: '20.214.207.225',
     port: 8000
 })
 
