@@ -8,6 +8,7 @@ export class Interface {
     avatars: Avatar[]
     startButton: PIXI.Sprite
     background: PIXI.Sprite
+    result: PIXI.Sprite
 
     public constructor(app: PIXI.Application) {
         this.app = app
@@ -15,7 +16,8 @@ export class Interface {
         this.avatars = [...this.createAvatars()]
         this.startButton = this.createStartButton()
         this.background = this.createBackground()
-        this.container.addChild(this.background, this.startButton, ...this.avatars.flatMap(o => o.container))
+        this.result = this.createResult()
+        this.container.addChild(this.background, this.startButton, this.result, ...this.avatars.flatMap(o => o.container))
     }
 
     public set isOwner(isOwner: boolean) {
@@ -65,17 +67,23 @@ export class Interface {
         sdk.on('turnStart', (event) => {
             const avatar = this.avatars.find(o => o.user?.id === event.Id)
             if (!avatar) return
-            avatar.highlight.visible = event.Id == sdk.userId
+            avatar.avatar.tint = 0xffff00
+            // avatar.highlight.visible = event.Id == sdk.userId
         })
 
         sdk.on('roundEnd', event => {
             this.background.visible = true
+            this.result.visible = true
             event.Players.forEach(player => {
                 const avatar = this.avatars.find(avatar => avatar.user?.id == player.UserId)
                 if (!avatar) return
                 avatar.score = player.Score
             })
         })
+    }
+
+    private createResult(): PIXI.Sprite {
+        return new PIXI.Sprite();
     }
 
     private addUser(user: User.User, isOwner: boolean = false, me: boolean = false) {
