@@ -54,6 +54,7 @@ export class Board {
     public init(sdk: PenguinParty): void {
         this.app.stage.addChild(this.container)
         sdk.on('roundEnd', () => this.clear())
+        sdk.on('submitCard', event => this.submitCard(event.X, event.Y, event.Card.Type))
     }
 
     private createContainer(): PIXI.Container {
