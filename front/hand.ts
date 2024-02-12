@@ -76,7 +76,12 @@ export class Hand {
             if (sdk.userId == event.UserId) {
                 this.removeCard(lastClickHand.index)
             }
-            board.submitCard(event.X, event.Y, lastClickHand.card.type)
+        })
+
+        sdk.on('turnStart', event => {
+            this.cards.forEach(o => {
+                o.sprite.eventMode = sdk.userId == event.Id ? 'static' : 'none'
+            })
         })
 
         sdk.on('roundEnd', () => this.clear())
@@ -90,7 +95,6 @@ export class Hand {
         card.width = 53
         card.height = 80
         card.y = 50;
-        card.eventMode = 'static'
         let handCard = new HandCard(card, type)
         card.on('click', (event) => {
             this.cardEvent.emit('click', new CardClickEvent(event, handCard, this.cards.indexOf(handCard)))

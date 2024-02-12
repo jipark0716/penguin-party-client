@@ -7,26 +7,39 @@ export class Interface {
     container: PIXI.Container
     avatars: Avatar[]
     startButton: PIXI.Sprite
+    background: PIXI.Sprite
 
     public constructor(app: PIXI.Application) {
         this.app = app
         this.container = this.createContainer()
         this.avatars = [...this.createAvatars()]
         this.startButton = this.createStartButton()
-        this.container.addChild(this.startButton, ...this.avatars.flatMap(o => o.container))
+        this.background = this.createBackground()
+        this.container.addChild(this.background, this.startButton, ...this.avatars.flatMap(o => o.container))
+    }
+
+    public set isOwner(isOwner: boolean) {
+        this.startButton.visible = isOwner
     }
 
     public init(sdk: PenguinParty) {
         this.app.stage.addChild(this.container)
         sdk.on('joinRoom', async (event) => {
             const ownerId = event.Room.Users.find(o => o.IsOwner)?.Id
-            const userCollectResponse = await User.get(event.Room.Users.flatMap(o => o.Id))
-            userCollectResponse.collect.forEach(user => this.addUser(user, ownerId == user.id))
+            const users = await User.get(event.Room.Users.map(o => o.Id))
+            this.isOwner = ownerId == sdk.userId
+            event.Room.Users
+                .map(u => users.find(o => o.id == u.Id))
+                .forEach(user => {
+                    if (!user) return
+                    this.addUser(user, ownerId == user.id, user.id == sdk.userId)
+                })
         })
 
         sdk.on('joinRoomOther', async (event) => {
-            const user = await User.get([event.Id])
-            this.addUser(user.collect[0])
+            if (event.Id == sdk.userId) return
+            const users = await User.get([event.Id])
+            this.addUser(users[0])
         })
 
         this.startButton.addEventListener('click', () => {
@@ -35,6 +48,7 @@ export class Interface {
 
         sdk.on('roundStart', (event) => {
             this.startButton.visible = false
+            this.background.visible = false
             this.avatars.forEach((o, i) => {
                 if (o.user != null) {
                     o.card = event.Cards.length
@@ -47,10 +61,24 @@ export class Interface {
             if (!avatar) return
             avatar.card -= 1
         })
+
+        sdk.on('turnStart', (event) => {
+            const avatar = this.avatars.find(o => o.user?.id === event.Id)
+            if (!avatar) return
+            avatar.highlight.visible = event.Id == sdk.userId
+        })
+
+        sdk.on('roundEnd', event => {
+            this.background.visible = true
+            event.Players.forEach(player => {
+                const avatar = this.avatars.find(avatar => avatar.user?.id == player.UserId)
+                if (!avatar) return
+                avatar.score = player.Score
+            })
+        })
     }
 
-    private addUser(user: User.User, isOwner: boolean = false) {
-        if (this.avatars.map(o => o.user?.id).includes(user.id)) return;
+    private addUser(user: User.User, isOwner: boolean = false, me: boolean = false) {
         const avatar = this.avatars.find(o => o.user == null)
         if (!avatar) return
         avatar.user = user
@@ -61,6 +89,9 @@ export class Interface {
         // 방장이면 왕관 달아주기
         avatar.isOwner = isOwner
         avatar.name = user.name
+
+        // 본인 아바타 표시
+        avatar.textArea.tint = me ? 0xff0000 : 0x999999
     }
 
     private createStartButton(): PIXI.Sprite {
@@ -87,19 +118,35 @@ export class Interface {
         return result;
     }
 
+    public createBackground(): PIXI.Sprite {
+        const result = new PIXI.Sprite(
+            this.app.renderer.generateTexture(
+                new PIXI.Graphics()
+                    .beginFill(0xeeeeee)
+                    .drawRoundedRect(0, 0,300, 300, 20)
+                    .endFill()
+            )
+        )
+        result.anchor.set(0.5)
+        result.x = this.width / 2
+        result.y = 200
+        return result
+    }
+
     private *createAvatars(): Generator<Avatar> {
         const textAreaTexture = this.createTextAreaTexture();
+        const highlightTexture = this.createHighlightTexture();
         const mask = this.createMaskTexture()
 
         for (let i = 0; i < 3; i++) {
             // 왼쪽
-            const left = new Avatar(true, mask, textAreaTexture)
+            const left = new Avatar(true, mask, textAreaTexture, highlightTexture)
             left.init()
             left.container.y = i * 120
             yield left
 
             // 오른쪽
-            const right = new Avatar(false, mask, textAreaTexture)
+            const right = new Avatar(false, mask, textAreaTexture, highlightTexture)
             right.init()
             right.container.y = i * 120
             right.container.x = 500
@@ -107,9 +154,19 @@ export class Interface {
         }
     }
 
+    private createHighlightTexture(): PIXI.Texture
+    {
+        return this.app.renderer.generateTexture(
+            new PIXI.Graphics()
+                .beginFill(0xffff00)
+                .drawCircle(0, 0, 35)
+                .endFill()
+        )
+    }
+
     private createTextAreaTexture(): PIXI.Texture {
         const graphics = new PIXI.Graphics
-        graphics.beginFill(0x650A5A, 0.25);
+        graphics.beginFill(0xffffff, 0.25);
         graphics.drawRoundedRect(0, 0, 120, 48, 4);
         graphics.endFill();
         return this.app.renderer.generateTexture(graphics)
@@ -150,8 +207,15 @@ export class Avatar {
     crown: PIXI.Sprite
     cardCountArea: PIXI.Text
     cardCount: number = 0
+    textArea: PIXI.Sprite
     user: User.User|null = null
-    public constructor(alignLeft: boolean, maskTexture: PIXI.Texture, textAreaTexture: PIXI.Texture) {
+    highlight: PIXI.Sprite
+    public constructor(
+        alignLeft: boolean,
+        maskTexture: PIXI.Texture,
+        textAreaTexture: PIXI.Texture,
+        highlightTexture: PIXI.Texture
+    ) {
         const mask = new PIXI.Sprite(maskTexture)
         this.alignLeft = alignLeft
         this.container = this.createContainer()
@@ -161,9 +225,10 @@ export class Avatar {
         this.crown = this.createCrown()
         this.cardCountArea = this.createCardCount()
         const hand = this.createHand()
-        const textArea = this.createTextArea(textAreaTexture)
-        textArea.addChild(this.nameArea, this.scoreArea)
-        this.container.addChild(textArea, mask, this.avatar, this.crown, hand, this.cardCountArea)
+        this.textArea = this.createTextArea(textAreaTexture)
+        this.highlight = this.createHighlight(highlightTexture)
+        this.textArea.addChild(this.nameArea, this.scoreArea)
+        this.container.addChild(this.textArea, mask, this.highlight, this.avatar, this.crown, hand, this.cardCountArea)
     }
 
     public init() {
@@ -199,6 +264,15 @@ export class Avatar {
         return this.cardCount
     }
 
+    private createHighlight(texture: PIXI.Texture): PIXI.Sprite {
+        const result = new PIXI.Sprite(texture)
+        result.visible = false
+        result.anchor.set(0.5)
+        result.y = 30
+        result.x = this.alignLeft ? 32 : 128
+        return result
+    }
+
     private createCardCount(): PIXI.Text {
         const result = new PIXI.Text('X0', {
             fontSize: 18,
@@ -206,7 +280,7 @@ export class Avatar {
         })
         result.anchor.set(0.5)
         result.x = this.alignLeft ? 144 : 16
-        result.y = 35
+        result.y = 34
         return result
     }
 
@@ -266,7 +340,7 @@ export class Avatar {
         return result
     }
 
-    private createTextArea(texture: PIXI.Texture): PIXI.Container{
+    private createTextArea(texture: PIXI.Texture): PIXI.Sprite {
         const result = new PIXI.Sprite(texture)
         result.y = 10
         result.x = this.alignLeft ? 40 : 0
